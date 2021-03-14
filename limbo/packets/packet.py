@@ -16,7 +16,10 @@ class Packet(object):
     def pack(self):
         buf = io.BytesIO(b"")
         for key, val in self.__class__.structure.items():
-            getattr(self, key).write(buf)
+                try:
+                    getattr(self, key).write(buf)
+                except:
+                    raise Exception(f"key {key} of {self.__class__.__name__} is invalid ({getattr(self, key)})")
         return buf.getvalue()
     def __repr__(self):
         res = ""

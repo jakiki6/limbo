@@ -42,3 +42,8 @@ def unpack_packet(buf, state):
     packet_id = utils.unpack_varint(buf)
 
     return packet_id, buf
+
+def send(packet, socket):
+    buf = pack(packet)
+    print(f"-> {packet} ({len(buf)})")
+    socket.send(buf)

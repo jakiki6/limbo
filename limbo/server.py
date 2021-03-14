@@ -1,13 +1,13 @@
-import socket, threading, json, base64, os
+import socket, threading, json, base64, os, uuid, time
 from . import packets
 
 from .packets.handshake.serverbound import HandShakePacket
 from .packets.status.serverbound import RequestPacket, PingPacket
 from .packets.status.clientbound import ResponsePacket, PongPacket
 from .packets.login.serverbound import LoginStartPacket
-from .packets.login.clientbound import LoginDisconnectPacket
+from .packets.login.clientbound import LoginDisconnectPacket, LoginSuccessPacket
 
-from .types import String
+from .types import String, UUID
 
 with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "icon.png"), "rb") as file:
     icon = base64.b64encode(file.read()).decode()
@@ -46,9 +46,10 @@ class Client(threading.Thread):
         packet = packets.unpack(buf, self.state)
         if packet == None:
             return
-        print(packet)
+        print(f"<- {packet} ({len(buf)})")
 
         if type(packet) == HandShakePacket:
+            print(f"Connection with client version {packet.protocol_version.val}")
 #            print(f"Updating to state {packet.next_state.val}")
             self.state = packet.next_state.val
         elif type(packet) == RequestPacket:
@@ -69,23 +70,22 @@ class Client(threading.Thread):
                 },
                 "favicon": "data:image/png;base64," + icon
             }), 32767)
-            buf = packets.pack(spacket)
-            self.socket.send(buf)
+            packets.send(spacket, self.socket)
         elif type(packet) == PingPacket:
             spacket = PongPacket()
             spacket.payload = packet.payload
-            buf = packets.pack(spacket)
-            self.socket.send(buf)
+            packets.send(spacket, self.socket)
             self.socket.close()
         elif type(packet) == LoginStartPacket:
             print(f"{packet.name.val} joined")
-            spacket = LoginDisconnectPacket()
-            spacket.reason = String(json.dumps({
-                "text": f"Playing currently not supported {packet.name.val}"
-            }), 32767)
-            buf = packets.pack(spacket)
-            self.socket.send(buf)
-            self.socket.close()
+#            spacket = LoginDisconnectPacket()
+#            spacket.reason = String(json.dumps({
+#                "text": f"Playing currently not supported {packet.name.val}"
+#            }), 32767)
+            spacket = LoginSuccessPacket()
+            spacket.uuid = UUID()
+            spacket.username = String(packet.name.val, 16)
+            packets.send(spacket, self.socket)
 
 class Server(threading.Thread):
     def __init__(self, host, port, maxclients):

@@ -1,3 +1,3 @@
 from .login import *
 
-__all__ = ("LoginDisconnectPacket",)
+__all__ = ("LoginDisconnectPacket", "LoginSuccessPacket")

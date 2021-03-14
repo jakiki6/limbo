@@ -1,4 +1,4 @@
-import struct
+import struct, uuid
 from . import utils
 
 class Type(object):
@@ -28,9 +28,9 @@ class String(Type):
         return self.__class__(val, self.length)
     def write(self, buf):
         val = self.val.encode("utf-8")
-        if not len(val) <= self.length:
+        if not len(val) <= self.length * 4:
             raise Exception(f"{len(val)} is too big (should be at most {self.length})")
-        buf.write(utils.pack_varint(len(val)))
+        buf.write(utils.pack_varint(len(self.val)))
         buf.write(val)
 
 class UnsignedShort(Type):
@@ -61,3 +61,11 @@ class Long(Type):
         return self.__class__(val)
     def write(self, buf):
         buf.write(struct.pack('>q', self.val))
+
+class UUID(Type):
+    def __init__(self, val=uuid.UUID(bytes=bytes(16))):
+        self.val = val
+    def read(self, buf):
+        return self.__class__(uuid.UUID(bytes=buf.read(16)))
+    def write(self, buf):
+        buf.write(self.val.bytes)

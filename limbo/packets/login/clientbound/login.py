@@ -1,5 +1,5 @@
 from ...packet import Packet
-from ....types import String
+from ....types import String, UUID
 
 class LoginDisconnectPacket(Packet):
     structure = {
@@ -7,3 +7,11 @@ class LoginDisconnectPacket(Packet):
     }
 
     id = 0x00
+
+class LoginSuccessPacket(Packet):
+    structure = {
+        "uuid": UUID(),
+        "username": String(16)
+    }
+
+    id = 0x02

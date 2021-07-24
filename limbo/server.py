@@ -1,13 +1,15 @@
 import socket, threading, json, base64, os, uuid, time
-from . import packets
+from . import packets, constants
 
 from .packets.handshake.serverbound import HandShakePacket
 from .packets.status.serverbound import RequestPacket, PingPacket
 from .packets.status.clientbound import ResponsePacket, PongPacket
 from .packets.login.serverbound import LoginStartPacket
 from .packets.login.clientbound import LoginDisconnectPacket, LoginSuccessPacket
+#from .packets.play.serverbound import 
+from .packets.play.clientbound import JoinGamePacket
 
-from .types import String, UUID
+from .types import *
 
 with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "icon.png"), "rb") as file:
     icon = base64.b64encode(file.read()).decode()
@@ -57,8 +59,8 @@ class Client(threading.Thread):
             spacket = ResponsePacket()
             spacket.json_response = String(json.dumps({
                 "version": {
-                    "name": "Limbo@1.16.5",
-                    "protocol": 754
+                    "name": "Limbo@1.17.1",
+                    "protocol": 756
                 },
                 "players": {
                     "max": self.server.maxclients,
@@ -85,6 +87,28 @@ class Client(threading.Thread):
             spacket = LoginSuccessPacket()
             spacket.uuid = UUID()
             spacket.username = String(packet.name.val, 16)
+            packets.send(spacket, self.socket)
+            self.state = 3
+
+            spacket = JoinGamePacket()
+            spacket.entity_id = Int(0)
+            spacket.is_hardcore = Boolean(True)
+            spacket.gamemode = UnsignedByte(3)
+            spacket.previous_gamemode = Byte(-1)
+            spacket.world_count = VarInt(1)
+            spacket.world_names = Array([
+                Identifier("limbo:the")
+            ])
+            spacket.dimension_codec = NbtTagCompound(constants.dimension_codec)
+            spacket.dimension = NbtTagCompound(constants.dimension)
+            spacket.world_name = Identifier("limbo:the")
+            spacket.hashed_seed = Long(0)
+            spacket.max_players = VarInt(0)
+            spacket.view_distance = VarInt(32)
+            spacket.reduced_debug_info = Boolean(False)
+            spacket.enable_respawn_screen = Boolean(True)
+            spacket.is_debug = Boolean(False)
+            spacket.is_flat = Boolean(False)
             packets.send(spacket, self.socket)
 
 class Server(threading.Thread):

@@ -8,7 +8,8 @@ mapping = {}
 from .handshake import mapping as hmapping
 from .status import mapping as smapping
 from .login import mapping as lmapping
-merge(mapping, hmapping, smapping, lmapping)
+from .play import mapping as pmapping
+merge(mapping, hmapping, smapping, lmapping, pmapping)
 
 print(f"Dump of registered packets:")
 for key, val in mapping.items():

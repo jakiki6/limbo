@@ -1,4 +1,4 @@
-import struct, uuid
+import struct, uuid, pynbt
 from . import utils
 
 class Type(object):
@@ -69,3 +69,68 @@ class UUID(Type):
         return self.__class__(uuid.UUID(bytes=buf.read(16)))
     def write(self, buf):
         buf.write(self.val.bytes)
+
+class Int(Type):
+    def __init__(self, val=0):
+        self.val = val
+    def read(self, buf):
+        val = struct.unpack('>i', buf.read(4))[0]
+        return self.__class__(val)
+    def write(self, buf): 
+        buf.write(struct.pack('>i', self.val))
+
+class Boolean(Type):
+    def __init__(self, val=False):
+        self.val = val
+    def read(self, buf): 
+        val = struct.unpack('?', buf.read(1))[0]
+        return self.__class__(val)
+    def write(self, buf):
+        buf.write(struct.pack('?', self.val))
+
+class Byte(Type):
+    def __init__(self, val=0x00):
+        self.val = val
+    def read(self, buf):
+        val = struct.unpack('b', buf.read(1))[0]
+        return self.__class__(val)
+    def write(self, buf):
+        buf.write(struct.pack('b', self.val))
+
+class UnsignedByte(Type):
+    def __init__(self, val=0x00):
+        self.val = val
+    def read(self, buf):
+        val = struct.unpack('B', buf.read(1))[0]
+        return self.__class__(val)
+    def write(self, buf):
+        buf.write(struct.pack('B', self.val))
+
+class Array(Type):
+    def __init__(self, val=[], num=-1, type=None):
+        self.val = val
+        self.num = num
+        self.type = type
+    def read(self, buf):
+        assert self.type != None, "Type not set"
+        assert self.num != -1, "Invalid number of items"
+
+        vals = []
+        for i in range(0, self.num):
+            vals.append(self.type.read(buf))
+
+        return vals
+    def write(self, buf):
+        for val in self.val:
+            val.write(buf)
+
+class Identifier(String): pass
+
+class NbtTagCompound(Type):
+    def __init__(self, val={}):
+        self.val = val
+    def read(self, buf):
+        val = pynbt.NBTFile(self.val)
+        return self.__class__(dict(val))
+    def write(self, buf):
+        pynbt.NBTFile(value=self.val).save(buf)
